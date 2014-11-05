@@ -87,7 +87,12 @@ router.prototype = {
 
 		if( section ) {
 
-			s.onRoute( section, data );
+			// check if this is a redirect
+			if( typeof section == 'string' )
+				this.go( section );
+			// otherwise treat it as a regular section
+			else
+				s.onRoute( section, data );
 		} else if( s[ '404' ] ) {
 
 			s.onRoute( s[ '404' ], data );
