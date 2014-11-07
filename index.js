@@ -78,7 +78,7 @@ router.prototype = {
 			section = this.getSection( routeData );
 
 		// if this is not a section descriptor or it is a descriptor and we should updateURL
-		if( section && ( section.section === undefined || ( section.section && section.useURL ) ) )
+		if( this.useURL( section ) )
 			window.location.hash = this.s.postHash + to;
 		else
 			this.doRoute( routeData, section );
@@ -130,6 +130,13 @@ router.prototype = {
 		}
 	},
 
+	useURL: function( section ) {
+
+		return section && 
+			   ( section.section === undefined ||  // if this is not a section descriptor update url
+			   ( section.section && section.useURL || section.useURL === undefined ) ) //is descriptor and has useURL or undefined
+	},
+
 	onURL: function() {
 
 		var routeStr = '/',
@@ -144,7 +151,7 @@ router.prototype = {
 		section = this.getSection( routeData );
 
 		// see if we can deep link into this section
-		if( section && ( section.section === undefined || ( section.section && section.useURL ) ) )
+		if( this.useURL( section ) )
 			this.doRoute( routeData, section );
 		// we should 404. Pass null value for section for the 404 to come up
 		else
