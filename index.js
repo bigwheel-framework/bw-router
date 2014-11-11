@@ -79,7 +79,7 @@ router.prototype = {
 
 		// if this is not a section descriptor or it is a descriptor and we should updateURL
 		if( this.useURL( section ) )
-			window.location.hash = this.s.postHash + to;
+			window.location.hash = this.s.postHash + routeStr;
 		else
 			this.doRoute( routeData, section );
 	},
