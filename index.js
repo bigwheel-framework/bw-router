@@ -1,4 +1,5 @@
-var eventlistener = require( 'eventlistener' ),
+var on = require( 'dom-event' ),
+	off = on.off,
 	routes = require( 'routes' );
 
 var noop = function() {};
@@ -52,12 +53,19 @@ router.prototype = {
 			}
 		}
 
-		eventlistener.add( window, 'hashchange', this.onURL.bind( this ) );
+		this.onURL = this.onURL.bind( this );
+
+		on( window, 'hashchange', this.onURL );
 
 		// force a hash change to start things up
 		this.onURL();
 
 		return this;
+	},
+
+	destroy: function() {
+
+		off( window, 'hashchange', this.onURL );
 	},
 
 	add: function( route, section ) {
