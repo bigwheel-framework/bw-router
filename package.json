@@ -1,6 +1,6 @@
 {
   "name": "bw-router",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "A router which uses hash urls for bigwheel",
   "main": "index.js",
   "directories": {
