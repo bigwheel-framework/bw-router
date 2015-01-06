@@ -98,28 +98,35 @@ router.prototype = {
 
 		if( section ) {
 
-			// check if this is a redirect
-			if( typeof section == 'string' ) {
+			// Check if we are a duplicate section
+			if (routeData.route!=this.lastRoute || section.duplicate) {
+				
+				// check if this is a redirect
+				if( typeof section == 'string' ) {
 
-				this.go( section );
-			// otherwise treat it as a regular section
-			} else {
-
-				// if this is a object definition vs a section definition
-				if( section.section ) {
-
-					s.onRoute( section.section, routeData );
-				// this is a regular section or array
+					this.go( section );
+				// otherwise treat it as a regular section
 				} else {
 
-					s.onRoute( section, routeData );
+					// if this is a object definition vs a section definition
+					if( section.section ) {
+
+						s.onRoute( section.section, routeData );
+					// this is a regular section or array
+					} else {
+
+						s.onRoute( section, routeData );
+					}
 				}
-			}
 				
+				this.lastRoute = routeData.route;
+			}
+
 		} else if( s[ '404' ] ) {
 
 			s.onRoute( s[ '404' ], routeData );
 		}
+
 	},
 
 	getRouteData: function( routeStr ) {
