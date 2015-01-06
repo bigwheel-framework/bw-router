@@ -99,7 +99,7 @@ router.prototype = {
 		if( section ) {
 
 			// Check if we are a duplicate section
-			if (routeData.route!=this.lastRoute || section.duplicate) {
+			if (routeData.route!=this.lastRoute || section.allowDuplicate) {
 				
 				// check if this is a redirect
 				if( typeof section == 'string' ) {
