@@ -40,4 +40,4 @@ router.destroy(); // will destroy the router
 
 ## License
 
-MIT, see [LICENSE.md](http://github.com/mikkoh/bw-router/blob/master/LICENSE.md) for details.
+MIT, see [LICENSE](http://github.com/mikkoh/bw-router/blob/master/LICENSE) for details.
