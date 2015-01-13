@@ -13,10 +13,10 @@ test( 'testing router', function( t ) {
 
 	if( global.location ) {
 		
-		t.plan( 8 );
+		t.plan( 9 );
 	} else {
 
-		t.plan( 7 );
+		t.plan( 8 );
 	}
 		
 
@@ -26,7 +26,7 @@ test( 'testing router', function( t ) {
 		'/about': { section: sectionAbout, useURL: false },
 		'/info': sectionInfo,
 		'/gallery/:image': sectionGallery,
-		// test redirect
+		'/redirect': '/',
 		'404': section404,
 
 		onRoute: function( section, req ) {
@@ -71,6 +71,13 @@ test( 'testing router', function( t ) {
 				break;
 
 				case 5:
+
+					t.equal( section, sectionRoot, 'redirect worked' );
+
+					nextTest();
+				break;
+
+				case 6:
 
 					clearTimeout( useURLTimeout );
 
@@ -117,6 +124,11 @@ test( 'testing router', function( t ) {
 			break;
 
 			case 5:
+
+				router.go( '/redirect' );
+			break;
+
+			case 6:
 
 				if( global.location ) {
 
