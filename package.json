@@ -27,6 +27,7 @@
   "homepage": "https://github.com/MikkoH/bw-router",
   "dependencies": {
     "dom-event": "0.0.3",
-    "routes": "^1.2.0"
+    "routes": "^1.2.0",
+    "tape": "^3.0.3"
   }
 }

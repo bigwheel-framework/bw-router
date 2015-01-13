@@ -55,17 +55,19 @@ router.prototype = {
 
 		this.onURL = this.onURL.bind( this );
 
-		on( window, 'hashchange', this.onURL );
+		if( global.location ) {
 
-		// force a hash change to start things up
-		this.onURL();
+			on( global, 'hashchange', this.onURL );
+		}
 
+		this.onURL(); // force a hash change to start things up
+		
 		return this;
 	},
 
 	destroy: function() {
 
-		off( window, 'hashchange', this.onURL );
+		off( global, 'hashchange', this.onURL );
 	},
 
 	add: function( route, section ) {
@@ -86,8 +88,8 @@ router.prototype = {
 			section = this.getSection( routeData );
 
 		// if this is not a section descriptor or it is a descriptor and we should updateURL
-		if( this.useURL( section ) )
-			window.location.hash = this.s.postHash + routeStr;
+		if( global.location && this.useURL( section ) )
+			global.location.hash = this.s.postHash + routeStr;
 		else
 			this.doRoute( routeData, section );
 	},
@@ -99,7 +101,7 @@ router.prototype = {
 		if( section ) {
 
 			// Check if we are a duplicate section
-			if (routeData.route!=this.lastRoute || section.duplicate) {
+			if( routeData.route != this.lastRoute || section.duplicate ) {
 				
 				// check if this is a redirect
 				if( typeof section == 'string' ) {
@@ -149,7 +151,7 @@ router.prototype = {
 
 		return section && 
 			   ( section.section === undefined ||  // if this is not a section descriptor update url
-			   ( section.section && section.useURL || section.useURL === undefined ) ) //is descriptor and has useURL or undefined
+			   ( section.section && section.useURL || section.useURL === undefined ) ); //is descriptor and has useURL or undefined
 	},
 
 	onURL: function() {
@@ -157,9 +159,9 @@ router.prototype = {
 		var routeStr = '/',
 			routeData, section;
 
-		if( window.location.hash != '' ) {
+		if( global.location && global.location.hash != '' ) {
 
-			routeStr = window.location.hash.substr( 1 + this.s.postHash.length );
+			routeStr = global.location.hash.substr( 1 + this.s.postHash.length );
 		}
 
 		routeData = this.getRouteData( routeStr );
