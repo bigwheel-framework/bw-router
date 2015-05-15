@@ -47,7 +47,7 @@ router.prototype = {
 		// now setup routes
 		for( var i in s ) {
 
-			if( i[ 0 ] == '/' ) {
+			if( i[ 0 ] == '/' || i == '404') {
 
 				this.router.addRoute( i, noop );
 			}
@@ -84,7 +84,7 @@ router.prototype = {
 		if( routeStr[ 0 ] != '/' )
 			routeStr = '/' + routeStr;
 
-		var routeData = this.getRouteData( routeStr ),
+		var routeData = this.getRouteData( routeStr ) || this.getRouteData('404'),
 			section = this.getSection( routeData );
 
 		// if this is not a section descriptor or it is a descriptor and we should updateURL
@@ -164,7 +164,7 @@ router.prototype = {
 			routeStr = global.location.hash.substr( 1 + this.s.postHash.length );
 		}
 
-		routeData = this.getRouteData( routeStr );
+		routeData = this.getRouteData( routeStr ) || this.getRouteData('404');
 		section = this.getSection( routeData );
 
 		// see if we can deep link into this section
