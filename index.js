@@ -98,37 +98,29 @@ router.prototype = {
 
 		var s = this.s;
 
-		if( section ) {
+		// Check if we are a duplicate section
+		if( routeData.route != this.lastRoute || section.duplicate ) {
+			
+			// check if this is a redirect
+			if( typeof section == 'string' ) {
 
-			// Check if we are a duplicate section
-			if( routeData.route != this.lastRoute || section.duplicate ) {
-				
-				// check if this is a redirect
-				if( typeof section == 'string' ) {
+				this.go( section );
+			// otherwise treat it as a regular section
+			} else {
 
-					this.go( section );
-				// otherwise treat it as a regular section
+				// if this is a object definition vs a section definition
+				if( section.section ) {
+
+					s.onRoute( section.section, routeData );
+				// this is a regular section or array
 				} else {
 
-					// if this is a object definition vs a section definition
-					if( section.section ) {
-
-						s.onRoute( section.section, routeData );
-					// this is a regular section or array
-					} else {
-
-						s.onRoute( section, routeData );
-					}
+					s.onRoute( section, routeData );
 				}
-				
-				this.lastRoute = routeData.route;
 			}
-
-		} else if( s[ '404' ] ) {
-
-			s.onRoute( s[ '404' ], routeData );
+			
+			this.lastRoute = routeData.route;
 		}
-
 	},
 
 	getRouteData: function( routeStr ) {
@@ -170,9 +162,6 @@ router.prototype = {
 		// see if we can deep link into this section
 		if( this.useURL( section ) )
 			this.doRoute( routeData, section );
-		// we should 404. Pass null value for section for the 404 to come up
-		else
-			this.doRoute( routeData, null );
 	}
 };
 
