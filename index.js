@@ -47,7 +47,7 @@ router.prototype = {
 		// now setup routes
 		for( var i in s ) {
 
-			if( i[ 0 ] == '/' ) {
+			if( i[ 0 ] == '/' || i == '404') {
 
 				this.router.addRoute( i, noop );
 			}
@@ -84,51 +84,36 @@ router.prototype = {
 		if( routeStr[ 0 ] != '/' )
 			routeStr = '/' + routeStr;
 
-		var routeData = this.getRouteData( routeStr ),
+		var routeData = this.getRouteData( routeStr ) || this.getRouteData('404'),
 			section = this.getSection( routeData );
 
 		// if this is not a section descriptor or it is a descriptor and we should updateURL
-		if( global.location && this.useURL( section ) )
+		if( global.location && this.useURL( section ) ) {
 			global.location.hash = this.s.postHash + routeStr;
-		else
+
+			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
+			// only when url changes and therefore cannot check to allow duplicate/repeating route
+			if(section.duplicate)
+				this.doRoute(routeData, section);
+		}
+		else {
 			this.doRoute( routeData, section );
+		}
 	},
 
 	doRoute: function( routeData, section ) {
 
 		var s = this.s;
+			
+			// check if this is a redirect
+		if( typeof section == 'string' ) {
 
-		if( section ) {
-
-			// Check if we are a duplicate section
-			if( routeData.route != this.lastRoute || section.duplicate ) {
-				
-				// check if this is a redirect
-				if( typeof section == 'string' ) {
-
-					this.go( section );
-				// otherwise treat it as a regular section
-				} else {
-
-					// if this is a object definition vs a section definition
-					if( section.section ) {
-
-						s.onRoute( section.section, routeData );
-					// this is a regular section or array
-					} else {
-
-						s.onRoute( section, routeData );
-					}
-				}
-				
-				this.lastRoute = routeData.route;
-			}
-
-		} else if( s[ '404' ] ) {
-
-			s.onRoute( s[ '404' ], routeData );
-		}
-
+			this.go( section );
+		} else { 
+			// otherwise treat it as a regular section
+			// if this is a object definition vs a section definition (regular section or array)
+			s.onRoute( section.section || section, routeData );
+		} 
 	},
 
 	getRouteData: function( routeStr ) {
@@ -164,15 +149,12 @@ router.prototype = {
 			routeStr = global.location.hash.substr( 1 + this.s.postHash.length );
 		}
 
-		routeData = this.getRouteData( routeStr );
+		routeData = this.getRouteData( routeStr ) || this.getRouteData('404');
 		section = this.getSection( routeData );
 
-		// see if we can deep link into this section
+		// see if we can deep link into this section (either normal or 404 section)
 		if( this.useURL( section ) )
 			this.doRoute( routeData, section );
-		// we should 404. Pass null value for section for the 404 to come up
-		else
-			this.doRoute( routeData, null );
 	}
 };
 
