@@ -95,8 +95,7 @@ router.prototype = {
 			// only when url changes and therefore cannot check to allow duplicate/repeating route
 			if(section.duplicate)
 				this.doRoute(routeData, section);
-		}
-		else {
+		} else {
 			this.doRoute( routeData, section );
 		}
 	},
@@ -104,7 +103,7 @@ router.prototype = {
 	doRoute: function( routeData, section ) {
 
 		var s = this.s;
-			
+
 			// check if this is a redirect
 		if( typeof section == 'string' ) {
 
@@ -141,8 +140,9 @@ router.prototype = {
 
 	onURL: function() {
 
-		var routeStr = '/',
-			routeData, section;
+		var routeStr = '/';
+		var routeData;
+		var section;
 
 		if( global.location && global.location.hash != '' ) {
 
@@ -153,8 +153,15 @@ router.prototype = {
 		section = this.getSection( routeData );
 
 		// see if we can deep link into this section (either normal or 404 section)
-		if( this.useURL( section ) )
+		if( this.useURL( section ) ) {
 			this.doRoute( routeData, section );
+		// else check if there's a 404 if so then go there
+		} else if( this.s['404'] ){
+
+			routeData = this.getRouteData('404');
+			section = this.getSection( routeData );
+			this.doRoute( routeData, section );
+		}
 	}
 };
 
