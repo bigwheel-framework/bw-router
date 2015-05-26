@@ -11,15 +11,6 @@ var router, useURLTimeout;
 
 test( 'testing router', function( t ) {
 
-	if( global.location ) {
-		
-		t.plan( 9 );
-	} else {
-
-		t.plan( 8 );
-	}
-		
-
 	router = require( '../' )( {
 
 		'/': sectionRoot,
@@ -49,6 +40,13 @@ test( 'testing router', function( t ) {
 
 				case 2:
 
+					t.notEqual(global.location.hash, '#!/about', 'hash should not be changed with useURL false');
+
+					nextTest();
+				break;
+
+				case 3:
+
 					t.equal( section, sectionGallery, 'section is /gallery/:image' );
 					t.equal( req.params.image, 'snake', 'param was correct' );
 					t.equal( req.route, '/gallery/:image', 'route was correct for gallery' );
@@ -56,28 +54,29 @@ test( 'testing router', function( t ) {
 					nextTest();
 				break;
 
-				case 3:
-
-					t.equal( section, section404, 'section is 404' );
-
-					nextTest();
-				break;
-
 				case 4:
-
-					t.equal( section, sectionInfo, 'section is info' );
+					
+					t.equal( req.route, '404', '404 route had info');
+					t.equal( section, section404, 'section is 404' );
 
 					nextTest();
 				break;
 
 				case 5:
 
-					t.equal( section, sectionRoot, 'redirect worked' );
+					t.equal( section, sectionInfo, 'section is info' );
 
 					nextTest();
 				break;
 
 				case 6:
+
+					t.equal( section, sectionRoot, 'redirect worked' );
+
+					nextTest();
+				break;
+
+				case 7:
 
 					clearTimeout( useURLTimeout );
 
@@ -110,36 +109,73 @@ test( 'testing router', function( t ) {
 
 			case 2:
 
-				router.go( '/gallery/snake' );
+				router.go('/about');
 			break;
 
 			case 3:
 
-				router.go( '/something doesnt exist' );
+				router.go( '/gallery/snake' );
 			break;
 
 			case 4:
 
-				router.go( 'info' );
+				router.go( '/something doesnt exist' );
 			break;
 
 			case 5:
 
-				router.go( '/redirect' );
+				router.go( 'info' );
 			break;
 
 			case 6:
+
+				router.go( '/redirect' );
+			break;
+
+			case 7:
 
 				if( global.location ) {
 
 					useURLTimeout = setTimeout( function() {
 
 						t.fail( 'didn\'t go to 404 when going to route with useURL = false' );
-					}, 33 );
+						nextTest();
+					}, 1000 );
 
 					global.location.hash = '#!/about';
 				}
 			break;
+
+			default:
+				router.destroy();
+				t.end();
+			break;
 		}
 	}
+});
+
+test('test 404 redirect', function(t) {
+
+	if( global.location ) {
+
+		global.location.hash = '';
+	}
+
+	router = require( '../' )( {
+		'/': sectionRoot,
+		'/about': sectionAbout,
+		'404': '/about',
+
+		onRoute: function( section, req ) {
+
+			if(req.route === '/') {
+				router.go('something that doesnt exist');
+			} else {
+				t.equal(section, sectionAbout, 'redirected to about');
+				t.end();
+			}
+		}
+	});
+
+	router.init();
 });
