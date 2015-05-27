@@ -40,7 +40,9 @@ test( 'testing router', function( t ) {
 
 				case 2:
 
-					t.notEqual(global.location.hash, '#!/about', 'hash should not be changed with useURL false');
+					if(global.location) {
+						t.notEqual(global.location.hash, '#!/about', 'hash should not be changed with useURL false');
+					}
 
 					nextTest();
 				break;
@@ -143,6 +145,9 @@ test( 'testing router', function( t ) {
 					}, 1000 );
 
 					global.location.hash = '#!/about';
+				} else {
+
+					nextTest();
 				}
 			break;
 

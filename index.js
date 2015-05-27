@@ -55,7 +55,6 @@ router.prototype = {
 		this.onURL = this.onURL.bind(this);
 
 		if( global.location ) {
-
 			on(global, 'hashchange', this.onURL);
 		}
 
@@ -66,7 +65,9 @@ router.prototype = {
 
 	destroy: function() {
 
-		off(global, 'hashchange', this.onURL);
+		if(global.location) {
+			off(global, 'hashchange', this.onURL);	
+		}
 	},
 
 	add: function(route, section) {
@@ -153,28 +154,29 @@ router.prototype = {
 		var routeData;
 		var section;
 
-		if(this.resolved !== global.location.hash) {
+		if( global.location && global.location.hash != '' ) {
+
+			// if we've already looked at this url then just get out of this function
+			if(global.location.hash === this.resolved) {
+				return;
+			}
 
 			this.resolved = global.location.hash;
+			routeStr = global.location.hash.substr(1 + this.s.postHash.length);
+		}
 
-			if( global.location && global.location.hash != '' ) {
+		routeData = this.getRouteData(routeStr) || this.getRouteData('404');
+		section = this.getSection(routeData);
 
-				routeStr = global.location.hash.substr(1 + this.s.postHash.length);
-			}
+		// see if we can deep link into this section (either normal or 404 section)
+		if( this.useURL(section) ) {
+			this.doRoute(routeData, section);
+		// else check if there's a 404 if so then go there
+		} else if( this.s['404'] ){
 
-			routeData = this.getRouteData(routeStr) || this.getRouteData('404');
+			routeData = this.getRouteData('404');
 			section = this.getSection(routeData);
-
-			// see if we can deep link into this section (either normal or 404 section)
-			if( this.useURL(section) ) {
-				this.doRoute(routeData, section);
-			// else check if there's a 404 if so then go there
-			} else if( this.s['404'] ){
-
-				routeData = this.getRouteData('404');
-				section = this.getSection(routeData);
-				this.doRoute(routeData, section);
-			}
+			this.doRoute(routeData, section);
 		}
 	}
 };
