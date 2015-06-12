@@ -23,12 +23,13 @@ router.prototype = {
 	init: function() {
 
 		var s = this.s;
+		var i;
 
 		// figure out a start section
 		if( s[ '/' ] === undefined ) {
 
 			// find the first path which would be a section
-			for(var i in s) {
+			for(i in s) {
 
 				if( i[ 0 ] == '/' ) {
 
@@ -44,7 +45,7 @@ router.prototype = {
 
 
 		// now setup routes
-		for(var i in s) {
+		for(i in s) {
 
 			if( i[ 0 ] == '/' || i == '404') {
 
@@ -154,7 +155,7 @@ router.prototype = {
 		var routeData;
 		var section;
 
-		if( global.location && global.location.hash != '' ) {
+		if( global.location && global.location.hash !== '' ) {
 
 			// if we've already looked at this url then just get out of this function
 			if(global.location.hash === this.resolved) {
