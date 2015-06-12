@@ -15,6 +15,9 @@ function router(settings) {
 	s.postHash = s.postHash || '!';
 	s.onRoute = s.onRoute || function() {};
 
+	this.lastRoute = null;
+	this.childRouter = null;
+	this.childBaseRoute = null;
 	this.router = routes();
 }
 
@@ -62,6 +65,41 @@ router.prototype = {
 		this.onURL(); // force a hash change to start things up
 		
 		return this;
+	},
+
+	sub: function(settings) {
+
+		// remove all veriable parts from lastRoute
+		var splitIdx1 = this.lastRoute.indexOf('*');
+		var splitIdx2 = this.lastRoute.indexOf(':');
+		var splitIdx;
+
+		if(splitIdx1 === -1 && splitIdx2 === -1) {
+			throw new Error('when creating a sub router the parent route should have a variable route using either : or *');
+		} else {
+			splitIdx1 = splitIdx1 !== -1 ? splitIdx1 : this.lastRoute.length;
+			splitIdx2 = splitIdx2 !== -1 ? splitIdx2 : this.lastRoute.length;
+			splitIdx = splitIdx1 < splitIdx2 ? splitIdx1 : splitIdx2;
+		}
+
+		this.childBaseRoute = this.lastRoute.substring(0, splitIdx - 1);
+
+		settings.postHash = this.s.postHash + this.childBaseRoute;
+
+		this.childRouter = new router(settings).init();
+
+		return this.childRouter;
+	},
+
+	destroySub: function(route) {
+
+		// this.childBaseRoute
+		if(this.childRouter && route.indexOf(this.childBaseRoute) !== 0) {
+			this.childRouter.destroy();
+
+			this.childBaseRoute = null;
+			this.childRouter = null;
+		}
 	},
 
 	destroy: function() {
@@ -120,15 +158,28 @@ router.prototype = {
 
 			this.go(section);
 		} else { 
-			// otherwise treat it as a regular section
-			// if this is a object definition vs a section definition (regular section or array)
-			s.onRoute(section.section || section, routeData);
+
+			if(routeData.route !== this.lastResolvedRoute || section.duplicate) {
+
+				this.lastResolvedRoute = routeData.route;
+
+				// otherwise treat it as a regular section
+				// if this is a object definition vs a section definition (regular section or array)
+				s.onRoute(section.section || section, routeData);
+			}
 		} 
 	},
 
 	getRouteData: function(routeStr) {
 
-		return this.router.match(routeStr);
+		var routeData = this.router.match(routeStr);
+
+		if(routeData) {
+			this.lastRoute = routeData.route;
+			this.destroySub(routeData.route);
+		}
+
+		return routeData;
 	},
 
 	getSection: function(routeData) {

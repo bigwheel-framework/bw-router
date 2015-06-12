@@ -7,9 +7,85 @@ var sectionAbout = { name: '/about' };
 var sectionInfo = [ { name: '/info' }, { name: '/info2' } ];
 var sectionGallery = { name: '/gallery/:image' };
 var section404 = { name: '404' };
-var router, useURLTimeout;
+var router;
+var subRouter;
+var useURLTimeout;
 
 test( 'testing router', function( t ) {
+
+	var tests = [
+		function(section, req) {
+			t.equal( section, sectionRoot, 'section is /' );
+			router.go( '/info' );
+		},
+
+		function(section, req) {
+			t.equal( section, sectionInfo, 'section is /info' );
+			router.go('/about');
+		},
+
+		function(section, req) {
+			if(global.location) {
+				t.notEqual(global.location.hash, '#!/about', 'hash should not be changed with useURL false');
+			}
+
+			router.go( '/gallery/snake' );
+		},
+
+		function(section, req) {
+			t.equal( section, sectionGallery, 'section is /gallery/:image' );
+			t.equal( req.params.image, 'snake', 'param was correct' );
+			t.equal( req.route, '/gallery/:image', 'route was correct for gallery' );
+
+			router.go( '/something doesnt exist' );
+		},
+
+		function(section, req) {
+			t.equal( req.route, '404', '404 route had info');
+			t.equal( section, section404, 'section is 404' );
+
+			router.go( 'info' );
+		},
+
+		function(section, req) {
+			t.equal( section, sectionInfo, 'section is info' );
+
+			router.go( '/redirect' );
+		},
+
+		function(section, req) {
+			
+			t.equal( section, sectionRoot, 'redirect worked' );
+
+			if( global.location ) {
+
+				useURLTimeout = setTimeout( function() {
+
+					t.fail( 'didn\'t go to 404 when going to route with useURL = false' );
+					endTests();
+				}, 1000 );
+
+				global.location.hash = '#!/about';
+			} else {
+
+				endTests();
+			}
+		},
+
+		function(section, req) {
+			clearTimeout( useURLTimeout );
+
+			t.equal( section, section404, 'went to 404 when trying to use url' );
+
+			endTests();
+		}
+	];
+
+	var endTests = function() {
+		t.end();
+	};
+
+	reset();
 
 	router = require( '../' )( {
 
@@ -21,150 +97,16 @@ test( 'testing router', function( t ) {
 		'404': section404,
 
 		onRoute: function( section, req ) {
-
-			switch( testIdx ) {
-
-				case 0:
-			
-					t.equal( section, sectionRoot, 'section is /' );
-
-					nextTest();
-				break;
-
-				case 1:
-
-					t.equal( section, sectionInfo, 'section is /info' );
-
-					nextTest();
-				break;
-
-				case 2:
-
-					if(global.location) {
-						t.notEqual(global.location.hash, '#!/about', 'hash should not be changed with useURL false');
-					}
-
-					nextTest();
-				break;
-
-				case 3:
-
-					t.equal( section, sectionGallery, 'section is /gallery/:image' );
-					t.equal( req.params.image, 'snake', 'param was correct' );
-					t.equal( req.route, '/gallery/:image', 'route was correct for gallery' );
-
-					nextTest();
-				break;
-
-				case 4:
-					
-					t.equal( req.route, '404', '404 route had info');
-					t.equal( section, section404, 'section is 404' );
-
-					nextTest();
-				break;
-
-				case 5:
-
-					t.equal( section, sectionInfo, 'section is info' );
-
-					nextTest();
-				break;
-
-				case 6:
-
-					t.equal( section, sectionRoot, 'redirect worked' );
-
-					nextTest();
-				break;
-
-				case 7:
-
-					clearTimeout( useURLTimeout );
-
-					t.equal( section, section404, 'went to 404 when trying to use url' );
-
-					nextTest();
-				break;
-			}
+			tests.shift()(section, req);
 		}
 	});
 
-	// if we're running in the browser ensure that the url is reset
-	if( global.location ) {
-
-		global.location.hash = '';
-	}
-
 	router.init();
-
-	function nextTest() {
-
-		testIdx++;
-
-		switch( testIdx ) {
-
-			case 1:
-
-				router.go( '/info' );
-			break;
-
-			case 2:
-
-				router.go('/about');
-			break;
-
-			case 3:
-
-				router.go( '/gallery/snake' );
-			break;
-
-			case 4:
-
-				router.go( '/something doesnt exist' );
-			break;
-
-			case 5:
-
-				router.go( 'info' );
-			break;
-
-			case 6:
-
-				router.go( '/redirect' );
-			break;
-
-			case 7:
-
-				if( global.location ) {
-
-					useURLTimeout = setTimeout( function() {
-
-						t.fail( 'didn\'t go to 404 when going to route with useURL = false' );
-						nextTest();
-					}, 1000 );
-
-					global.location.hash = '#!/about';
-				} else {
-
-					nextTest();
-				}
-			break;
-
-			default:
-				router.destroy();
-				t.end();
-			break;
-		}
-	}
 });
 
 test('test 404 redirect', function(t) {
 
-	if( global.location ) {
-
-		global.location.hash = '';
-	}
+	reset();
 
 	router = require( '../' )( {
 		'/': sectionRoot,
@@ -184,3 +126,87 @@ test('test 404 redirect', function(t) {
 
 	router.init();
 });
+
+test('test sub sections', function(t) {
+
+	reset();
+
+	var subTests = [
+		function(section, req) {
+			t.equal(section, '1', 'first section set');
+
+			process.nextTick( function() {
+				subRouter.go('/somethingThatDoesntExist');
+			});
+		},
+
+		function(section, req) {
+			t.equal(section, '404', 'sub 404d');
+
+			process.nextTick( function() {
+				subRouter.go('/2');
+			});
+		},
+
+		function(section, req) {
+			t.equal(section, '2', 'second section set');
+
+			process.nextTick( function() {
+				router.go('/other');
+			});
+		},
+
+		function(section, req) {
+			t.fail('should have not resolved sub section');
+		}
+	];
+	var countInGallery = 0;
+
+
+	router = require('../')( {
+		'/': '/gallery/1',
+		'/gallery/*': { section: 'gallery' },
+		'/other': { section: 'other' },
+		'404': { section: '404' },
+		onRoute: function(section, req) {
+			
+			if(section === 'gallery') {
+
+				subRouter = router.sub( {
+					'/1': { section: '1' },
+					'/2': { section: '2' },
+					'404': { section: '404' },
+					onRoute: function(section, req) {
+
+						subTests.shift()(section, req);
+					}
+				});
+
+				t.equal(++countInGallery, 1, 'been in gallery only once');
+				t.ok(subRouter, 'received a sub router');
+			} else if(section === 'other') {
+
+				t.pass('went in other parent section and may have destroyed child');
+				t.end();
+		  } else {
+
+				t.fail('resolved another url for parent: ' + section);
+				t.end();
+			}
+		}
+	});
+
+	router.init();
+});
+
+function reset() {
+
+	if(router) {
+		router.destroy();
+	}
+
+	if( global.location ) {
+
+		global.location.hash = '';
+	}
+}
