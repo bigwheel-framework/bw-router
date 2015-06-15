@@ -94,11 +94,12 @@ test( 'testing router', function( t ) {
 		'/info': sectionInfo,
 		'/gallery/:image': sectionGallery,
 		'/redirect': '/',
-		'404': section404,
+		'404': section404
+	});
 
-		onRoute: function( section, req ) {
-			tests.shift()(section, req);
-		}
+
+	router.on('route', function(info) {
+		tests.shift()(info.section, info.route);
 	});
 
 	router.init();
@@ -121,6 +122,18 @@ test('test 404 redirect', function(t) {
 				t.equal(section, sectionAbout, 'redirected to about');
 				t.end();
 			}
+		}
+	});
+
+	router.on('route', function(info) {
+		var req = info.route;
+		var section = info.section;
+
+		if(req.route === '/') {
+			router.go('something that doesnt exist');
+		} else {
+			t.equal(section, sectionAbout, 'redirected to about');
+			t.end();
 		}
 	});
 
@@ -167,32 +180,38 @@ test('test sub sections', function(t) {
 		'/': '/gallery/1',
 		'/gallery/*': { section: 'gallery' },
 		'/other': { section: 'other' },
-		'404': { section: '404' },
-		onRoute: function(section, req) {
-			
-			if(section === 'gallery') {
+		'404': { section: '404' }
+	});
 
-				subRouter = router.sub( {
-					'/1': { section: '1' },
-					'/2': { section: '2' },
-					'404': { section: '404' },
-					onRoute: function(section, req) {
+	router.on('route', function(parentInfo) {
 
-						subTests.shift()(section, req);
-					}
-				});
+		var section = parentInfo.section;
+		var req = parentInfo.route;
 
-				t.equal(++countInGallery, 1, 'been in gallery only once');
-				t.ok(subRouter, 'received a sub router');
-			} else if(section === 'other') {
+		if(section === 'gallery') {
 
-				t.pass('went in other parent section and may have destroyed child');
-				t.end();
-		  } else {
+			subRouter = router.sub( {
+				'/1': { section: '1' },
+				'/2': { section: '2' },
+				'404': { section: '404' }
+			});
 
-				t.fail('resolved another url for parent: ' + section);
-				t.end();
-			}
+			subRouter.on('route', function(info) {
+				subTests.shift()(info.section, info.route);
+			});
+
+			t.equal(++countInGallery, 1, 'been in gallery only once');
+			t.ok(subRouter, 'received a sub router');
+
+			subRouter.init();
+		} else if(section === 'other') {
+
+			t.pass('went in other parent section and may have destroyed child');
+			t.end();
+	  } else {
+
+			t.fail('resolved another url for parent: ' + section);
+			t.end();
 		}
 	});
 
@@ -202,6 +221,7 @@ test('test sub sections', function(t) {
 function reset() {
 
 	if(router) {
+		router.removeAllListeners('route');
 		router.destroy();
 	}
 
