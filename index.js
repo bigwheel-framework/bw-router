@@ -152,11 +152,11 @@ p.go = function(routeStr) {
 	// if this is not a section descriptor or it is a descriptor and we should updateURL
 	if( global.location && doURLChange ) {
 
-		global.location.hash = newURL;
-
-		// Check if duplicate is set. The check is done here since, onhashchange event triggers 
-		// only when url changes and therefore cannot check to allow duplicate/repeating route
-		if(section.duplicate) {
+		if(global.location.hash.replace(/^#/, '') != newURL) {
+			global.location.hash = newURL;
+		} else if(section.duplicate){
+			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
+			// only when url changes and therefore cannot check to allow duplicate/repeating route
 			this.doRoute(routeData, section);
 		}
 	} else if( !global.location || !doURLChange ) {
