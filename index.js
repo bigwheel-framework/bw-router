@@ -154,11 +154,14 @@ p.go = function(routeStr) {
 
 		if(global.location.hash.replace(/^#/, '') != newURL) {
 			global.location.hash = newURL;
-		} else if(section.duplicate){
+		} else if(section.duplicate || !section.useURL) {
 			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
 			// only when url changes and therefore cannot check to allow duplicate/repeating route
+
+			// Additionally check if useURL is set to false. If not, the route is not triggered by
+			// url changes
 			this.doRoute(routeData, section);
-		}
+		} 
 	} else if( !global.location || !doURLChange ) {
 		this.doRoute(routeData, section);
 	}
