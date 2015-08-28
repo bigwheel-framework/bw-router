@@ -157,14 +157,14 @@ p.go = function(routeStr) {
 		// Check if duplicate is set. The check is done here since, onhashchange event triggers 
 		// only when url changes and therefore cannot check to allow duplicate/repeating route
 		if(section.duplicate) {
-			this.doRoute(routeData, section);
+			this.doRoute(routeData, section, routeStr);
 		}
 	} else if( !global.location || !doURLChange ) {
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	}
 };
 
-p.doRoute = function(routeData, section) {
+p.doRoute = function(routeData, section, path) {
 
 	var s = this.s;
 
@@ -182,7 +182,8 @@ p.doRoute = function(routeData, section) {
 			// if this is a object definition vs a section definition (regular section or array)
 			this.emit('route', {
 				section: section.section || section,
-				route: routeData
+				route: routeData,
+				path: path
 			});
 		}
 	} 
@@ -240,13 +241,13 @@ p.onURL = function() {
 
 	// see if we can deep link into this section (either normal or 404 section)
 	if( this.useURL(section) ) {
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	// else check if there's a 404 if so then go there
 	} else if( this.s['404'] ){
 
 		routeData = this.getRouteData('404');
 		section = this.getSection(routeData);
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	}
 };
 
