@@ -92,14 +92,16 @@ test( 'testing router', function( t ) {
 		'/': sectionRoot,
 		'/about': { section: sectionAbout, useURL: false },
 		'/info': sectionInfo,
-		'/gallery/:image': sectionGallery,
+		'/gallery/:image':  { section: sectionGallery, duplicate: true },
 		'/redirect': '/',
 		'404': section404
 	});
 
-
 	router.on('route', function(info) {
-		tests.shift()(info.section, info.route);
+		// Using 500ms to not interfere with another test case
+		setTimeout(function() {
+			tests.shift()(info.section, info.route);
+		},500);
 	});
 
 	router.init();
