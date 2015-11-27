@@ -206,7 +206,7 @@ p.getRouteData = function(routeStr) {
 p.getSection = function(routeData) {
 
 	if(routeData) {
-		var hasWildcard = routeData.route.indexOf('*')>-1 || routeData.route.indexOf(':')>-1;
+		var hasWildcard = routeData.route && (routeData.route.match(/.*[\[\]@!$&:'()*+,;=].*/g) || routeData.route instanceof RegExp);
 		var sec = this.s[ routeData.route ];
 		if (hasWildcard && sec.duplicate===undefined) {
 			if (!sec.section) {
