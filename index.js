@@ -134,7 +134,7 @@ p.add = function(route, section) {
 	return this;
 };
 
-p.go = function(routeStr) {
+p.go = function(routeStr,options) {
 
 	var routeData;
 	var section;
@@ -154,7 +154,7 @@ p.go = function(routeStr) {
 	if( global.location && doURLChange ) {
 		var url = this.hasPushState ? global.location.pathname : global.location.hash.replace(/^#/, '');
 		if(url != newURL) {
-			loc.update(newURL,{trigger: true});
+			loc.update(newURL,{trigger: (options && options.silent) ? false : true});
 		} else if(section.duplicate || !section.useURL) {
 			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
 			// only when url changes and therefore cannot check to allow duplicate/repeating route
