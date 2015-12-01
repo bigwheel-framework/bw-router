@@ -71,53 +71,6 @@ p.init = function() {
 	return this;
 };
 
-p.sub = function(settings) {
-
-	// remove all veriable parts from lastRoute
-	var splitIdx1 = this.lastRoute.indexOf('*');
-	var splitIdx2 = this.lastRoute.indexOf(':');
-	var splitIdx;
-
-	if(splitIdx1 === -1 && splitIdx2 === -1) {
-		throw new Error('when creating a sub router the parent route should have a variable route using either : or *');
-	} else {
-		splitIdx1 = splitIdx1 !== -1 ? splitIdx1 : this.lastRoute.length;
-		splitIdx2 = splitIdx2 !== -1 ? splitIdx2 : this.lastRoute.length;
-		splitIdx = splitIdx1 < splitIdx2 ? splitIdx1 : splitIdx2;
-	}
-
-	this.childFullRoute = this.lastRoute;
-	this.childBaseRoute = this.lastRoute.substring(0, splitIdx - 1);
-
-	settings.postHash = this.s.postHash + this.childBaseRoute;
-
-	this.childRouter = new router(settings);
-
-	this.emit('sub_create', {
-		route: this.childFullRoute,
-		router: this.childRouter
-	});
-
-	return this.childRouter;
-};
-
-p.destroySub = function(route) {
-
-	// this.childBaseRoute
-	if(this.childRouter && route.indexOf(this.childBaseRoute) !== 0) {
-		this.childRouter.destroy();
-
-		this.emit('sub_destroy', {
-			route: this.childFullRoute,
-			router: this.childRouter
-		});
-
-		this.childFullRoute = null;
-		this.childBaseRoute = null;
-		this.childRouter = null;
-	}
-};
-
 p.destroy = function() {
 
 	if(global.location) {
@@ -185,7 +138,7 @@ p.doRoute = function(routeData, section, path) {
 			// otherwise treat it as a regular section
 			// if this is a object definition vs a section definition (regular section or array)
 			this.emit('route', {
-				section: section.section || section,
+				section: section,
 				route: routeData,
 				path: path
 			});
@@ -199,7 +152,6 @@ p.getRouteData = function(routeStr) {
 
 	if(routeData) {
 		this.lastRoute = routeData.route;
-		this.destroySub(routeData.route);
 	}
 
 	return routeData;
