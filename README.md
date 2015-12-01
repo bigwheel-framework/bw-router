@@ -35,6 +35,8 @@ router.init(); // calling init will start resolving routes
 
 router.go( '/gallery/10' ); // calling go will cause the router to evaluate 
 
+router.go( '/gallery/10', {silent: true} ); // will not trigger a section change, useful for scrolling sites
+
 router.destroy(); // will destroy the router
 ```
 
