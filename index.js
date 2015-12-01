@@ -1,7 +1,6 @@
-var on = require('dom-event');
-var off = on.off;
 var routes = require('routes');
 var EventEmitter = require('events').EventEmitter;
+var loc = new (require('location-bar'))();
 var noop = function() {};
 
 function router(settings) {
@@ -62,7 +61,9 @@ p.init = function() {
 	this.onURL = this.onURL.bind(this);
 
 	if( global.location ) {
-		on(global, 'hashchange', this.onURL);
+		loc.start({pushState: this.s.pushState!==undefined ? this.s.pushState : true});
+		this.hasPushState = loc.hasPushState();
+		loc.onChange(this.onURL);
 	}
 
 	this.onURL(); // force a hash change to start things up
@@ -120,7 +121,7 @@ p.destroySub = function(route) {
 p.destroy = function() {
 
 	if(global.location) {
-		off(global, 'hashchange', this.onURL);	
+		location.stop();
 	}
 };
 
@@ -144,15 +145,16 @@ p.go = function(routeStr) {
 		routeStr = '/' + routeStr;
 	}
 
-	newURL = this.s.postHash + routeStr;
+	newURL = (this.hasPushState ? '' : this.s.postHash) + routeStr;
 	routeData = this.getRouteData(routeStr) || this.getRouteData('404');
 	section = this.getSection(routeData);
 	doURLChange = this.useURL(section);
 
 	// if this is not a section descriptor or it is a descriptor and we should updateURL
 	if( global.location && doURLChange ) {
-		if(global.location.hash.replace(/^#/, '') != newURL) {
-			global.location.hash = newURL;
+		var url = this.hasPushState ? global.location.pathname : global.location.hash.replace(/^#/, '');
+		if(url != newURL) {
+			loc.update(newURL,{trigger: true});
 		} else if(section.duplicate || !section.useURL) {
 			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
 			// only when url changes and therefore cannot check to allow duplicate/repeating route
@@ -231,21 +233,21 @@ p.useURL = function(section) {
 		   ( section.section && section.useURL || section.useURL === undefined ) ); //is descriptor and has useURL or undefined
 };
 
-p.onURL = function() {
-
+p.onURL = function(url) {
 	var routeStr = '/';
 	var routeData;
 	var section;
 
-	if( global.location && global.location.hash !== '' ) {
+	if( global.location && url!==undefined ) {
 
+		if (url.charAt(0) != '/') url = '/' + url;
 		// if we've already looked at this url then just get out of this function
-		if(global.location.hash === this.resolved) {
+		if(url === this.resolved) {
 			return;
 		}
 
-		this.resolved = global.location.hash;
-		routeStr = global.location.hash.substr(1 + this.s.postHash.length);
+		this.resolved = url;
+		routeStr = this.hasPushState ? url : url.substr(1 + this.s.postHash.length);
 	}
 
 	routeData = this.getRouteData(routeStr) || this.getRouteData('404');
