@@ -74,7 +74,7 @@ p.init = function() {
 p.destroy = function() {
 
 	if(global.location) {
-		location.stop();
+		loc.stop();
 	}
 };
 
