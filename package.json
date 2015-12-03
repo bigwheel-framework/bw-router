@@ -1,6 +1,6 @@
 {
   "name": "bw-router",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "associate objects with routes. Used by bigwheel to route sections",
   "main": "index.js",
   "directories": {
