@@ -64,9 +64,10 @@ p.init = function() {
 		loc.start({pushState: this.s.pushState!==undefined ? this.s.pushState : true});
 		this.hasPushState = loc.hasPushState();
 		loc.onChange(this.onURL);
+		loc.loadUrl();
+	} else {
+		this.onURL();
 	}
-
-	this.onURL(); // force a hash change to start things up
 	
 	return this;
 };
