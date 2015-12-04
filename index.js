@@ -191,7 +191,7 @@ p.onURL = function(url) {
 	var routeData;
 	var section;
 
-	if( global.location && url!==undefined ) {
+	if( global.location && url ) {
 
 		if (url.charAt(0) != '/') url = '/' + url;
 		// if we've already looked at this url then just get out of this function
