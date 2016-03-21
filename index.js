@@ -108,7 +108,10 @@ p.go = function(routeStr,options) {
 	if( global.location && doURLChange ) {
 		var url = this.hasPushState ? global.location.pathname : global.location.hash.replace(/^#/, '');
 		if(url != newURL) {
-			loc.update(newURL,{trigger: (options && options.silent) ? false : true});
+			loc.update(newURL,{
+				trigger: (options && options.silent) ? false : true,
+				replace: (options && options.replace) ? true : false
+			});
 		} else if(section.duplicate || !section.useURL) {
 			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
 			// only when url changes and therefore cannot check to allow duplicate/repeating route
