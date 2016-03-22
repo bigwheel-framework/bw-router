@@ -33,7 +33,7 @@ test( 'testing router', function( t ) {
 		},
 
 		function(section, req) {
-			t.equal( section, sectionGallery, 'section is /gallery/:image' );
+			t.equal( section.section, sectionGallery, 'section is /gallery/:image' );
 			t.equal( req.params.image, 'snake', 'param was correct' );
 			t.equal( req.route, '/gallery/:image', 'route was correct for gallery' );
 
@@ -92,14 +92,16 @@ test( 'testing router', function( t ) {
 		'/': sectionRoot,
 		'/about': { section: sectionAbout, useURL: false },
 		'/info': sectionInfo,
-		'/gallery/:image': sectionGallery,
+		'/gallery/:image':  { section: sectionGallery, duplicate: true },
 		'/redirect': '/',
 		'404': section404
 	});
 
-
 	router.on('route', function(info) {
-		tests.shift()(info.section, info.route);
+		// Using 500ms to not interfere with another test case
+		setTimeout(function() {
+			tests.shift()(info.section, info.route);
+		},500);
 	});
 
 	router.init();
@@ -133,84 +135,6 @@ test('test 404 redirect', function(t) {
 			router.go('something that doesnt exist');
 		} else {
 			t.equal(section, sectionAbout, 'redirected to about');
-			t.end();
-		}
-	});
-
-	router.init();
-});
-
-test('test sub sections', function(t) {
-
-	reset();
-
-	var subTests = [
-		function(section, req) {
-			t.equal(section, '1', 'first section set');
-
-			process.nextTick( function() {
-				subRouter.go('/somethingThatDoesntExist');
-			});
-		},
-
-		function(section, req) {
-			t.equal(section, '404', 'sub 404d');
-
-			process.nextTick( function() {
-				subRouter.go('/2');
-			});
-		},
-
-		function(section, req) {
-			t.equal(section, '2', 'second section set');
-
-			process.nextTick( function() {
-				router.go('/other');
-			});
-		},
-
-		function(section, req) {
-			t.fail('should have not resolved sub section');
-		}
-	];
-	var countInGallery = 0;
-
-
-	router = require('../')( {
-		'/': '/gallery/1',
-		'/gallery/*': { section: 'gallery' },
-		'/other': { section: 'other' },
-		'404': { section: '404' }
-	});
-
-	router.on('route', function(parentInfo) {
-
-		var section = parentInfo.section;
-		var req = parentInfo.route;
-
-		if(section === 'gallery') {
-
-			subRouter = router.sub( {
-				'/1': { section: '1' },
-				'/2': { section: '2' },
-				'404': { section: '404' }
-			});
-
-			subRouter.on('route', function(info) {
-				subTests.shift()(info.section, info.route);
-			});
-
-			t.equal(++countInGallery, 1, 'been in gallery only once');
-			t.ok(subRouter, 'received a sub router');
-
-			subRouter.init();
-		} else if(section === 'other') {
-
-			t.pass('went in other parent section and may have destroyed child');
-			t.end();
-	  } else {
-
-			t.fail('resolved another url for parent: ' + section);
 			t.end();
 		}
 	});

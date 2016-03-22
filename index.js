@@ -1,7 +1,6 @@
-var on = require('dom-event');
-var off = on.off;
 var routes = require('routes');
 var EventEmitter = require('events').EventEmitter;
+var loc = new (require('location-bar'))();
 var noop = function() {};
 
 function router(settings) {
@@ -62,65 +61,21 @@ p.init = function() {
 	this.onURL = this.onURL.bind(this);
 
 	if( global.location ) {
-		on(global, 'hashchange', this.onURL);
+		loc.start({pushState: this.s.pushState!==undefined ? this.s.pushState : true});
+		this.hasPushState = loc.hasPushState();
+		loc.onChange(this.onURL);
+		loc.loadUrl();
+	} else {
+		this.onURL();
 	}
-
-	this.onURL(); // force a hash change to start things up
 	
 	return this;
-};
-
-p.sub = function(settings) {
-
-	// remove all veriable parts from lastRoute
-	var splitIdx1 = this.lastRoute.indexOf('*');
-	var splitIdx2 = this.lastRoute.indexOf(':');
-	var splitIdx;
-
-	if(splitIdx1 === -1 && splitIdx2 === -1) {
-		throw new Error('when creating a sub router the parent route should have a variable route using either : or *');
-	} else {
-		splitIdx1 = splitIdx1 !== -1 ? splitIdx1 : this.lastRoute.length;
-		splitIdx2 = splitIdx2 !== -1 ? splitIdx2 : this.lastRoute.length;
-		splitIdx = splitIdx1 < splitIdx2 ? splitIdx1 : splitIdx2;
-	}
-
-	this.childFullRoute = this.lastRoute;
-	this.childBaseRoute = this.lastRoute.substring(0, splitIdx - 1);
-
-	settings.postHash = this.s.postHash + this.childBaseRoute;
-
-	this.childRouter = new router(settings);
-
-	this.emit('sub_create', {
-		route: this.childFullRoute,
-		router: this.childRouter
-	});
-
-	return this.childRouter;
-};
-
-p.destroySub = function(route) {
-
-	// this.childBaseRoute
-	if(this.childRouter && route.indexOf(this.childBaseRoute) !== 0) {
-		this.childRouter.destroy();
-
-		this.emit('sub_destroy', {
-			route: this.childFullRoute,
-			router: this.childRouter
-		});
-
-		this.childFullRoute = null;
-		this.childBaseRoute = null;
-		this.childRouter = null;
-	}
 };
 
 p.destroy = function() {
 
 	if(global.location) {
-		off(global, 'hashchange', this.onURL);	
+		loc.stop();
 	}
 };
 
@@ -133,7 +88,7 @@ p.add = function(route, section) {
 	return this;
 };
 
-p.go = function(routeStr) {
+p.go = function(routeStr,options) {
 
 	var routeData;
 	var section;
@@ -144,27 +99,33 @@ p.go = function(routeStr) {
 		routeStr = '/' + routeStr;
 	}
 
-	newURL = this.s.postHash + routeStr;
+	newURL = (this.hasPushState ? '' : this.s.postHash) + routeStr;
 	routeData = this.getRouteData(routeStr) || this.getRouteData('404');
 	section = this.getSection(routeData);
 	doURLChange = this.useURL(section);
 
 	// if this is not a section descriptor or it is a descriptor and we should updateURL
 	if( global.location && doURLChange ) {
+		var url = this.hasPushState ? global.location.pathname : global.location.hash.replace(/^#/, '');
+		if(url != newURL) {
+			loc.update(newURL,{
+				trigger: (options && options.silent) ? false : true,
+				replace: (options && options.replace) ? true : false
+			});
+		} else if(section.duplicate || !section.useURL) {
+			// Check if duplicate is set. The check is done here since, onhashchange event triggers 
+			// only when url changes and therefore cannot check to allow duplicate/repeating route
 
-		global.location.hash = newURL;
-
-		// Check if duplicate is set. The check is done here since, onhashchange event triggers 
-		// only when url changes and therefore cannot check to allow duplicate/repeating route
-		if(section.duplicate) {
-			this.doRoute(routeData, section);
-		}
+			// Additionally check if useURL is set to false. If not, the route is not triggered by
+			// url changes
+			this.doRoute(routeData, section, routeStr);
+		} 
 	} else if( !global.location || !doURLChange ) {
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	}
 };
 
-p.doRoute = function(routeData, section) {
+p.doRoute = function(routeData, section, path) {
 
 	var s = this.s;
 
@@ -181,8 +142,9 @@ p.doRoute = function(routeData, section) {
 			// otherwise treat it as a regular section
 			// if this is a object definition vs a section definition (regular section or array)
 			this.emit('route', {
-				section: section.section || section,
-				route: routeData
+				section: section,
+				route: routeData,
+				path: path
 			});
 		}
 	} 
@@ -194,7 +156,6 @@ p.getRouteData = function(routeStr) {
 
 	if(routeData) {
 		this.lastRoute = routeData.route;
-		this.destroySub(routeData.route);
 	}
 
 	return routeData;
@@ -203,8 +164,18 @@ p.getRouteData = function(routeStr) {
 p.getSection = function(routeData) {
 
 	if(routeData) {
-
-		return this.s[ routeData.route ];
+		var hasWildcard = routeData.route && (routeData.route.match(/.*[\[\]@!$&:'()*+,;=].*/g) || routeData.route instanceof RegExp);
+		var sec = this.s[ routeData.route ];
+		if (hasWildcard && sec.duplicate===undefined) {
+			if (!sec.section) {
+				return {section: sec, duplicate: true};
+			} else {
+				sec.duplicate = true;
+				return sec;
+			}
+		}	else {
+			return sec;
+		}
 	} else {
 
 		return null;
@@ -218,21 +189,21 @@ p.useURL = function(section) {
 		   ( section.section && section.useURL || section.useURL === undefined ) ); //is descriptor and has useURL or undefined
 };
 
-p.onURL = function() {
-
+p.onURL = function(url) {
 	var routeStr = '/';
 	var routeData;
 	var section;
 
-	if( global.location && global.location.hash !== '' ) {
+	if( global.location && url ) {
 
+		if (url.charAt(0) != '/') url = '/' + url;
 		// if we've already looked at this url then just get out of this function
-		if(global.location.hash === this.resolved) {
+		if(url === this.resolved) {
 			return;
 		}
 
-		this.resolved = global.location.hash;
-		routeStr = global.location.hash.substr(1 + this.s.postHash.length);
+		this.resolved = url;
+		routeStr = this.hasPushState ? url : url.substr(1 + this.s.postHash.length);
 	}
 
 	routeData = this.getRouteData(routeStr) || this.getRouteData('404');
@@ -240,13 +211,13 @@ p.onURL = function() {
 
 	// see if we can deep link into this section (either normal or 404 section)
 	if( this.useURL(section) ) {
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	// else check if there's a 404 if so then go there
 	} else if( this.s['404'] ){
 
 		routeData = this.getRouteData('404');
 		section = this.getSection(routeData);
-		this.doRoute(routeData, section);
+		this.doRoute(routeData, section, routeStr);
 	}
 };
 

@@ -28,12 +28,16 @@ var router = bwRouter( {
   '/gallery/:image': { name: 'gallery' }, // routes can be defined with parameters for more info visit: 
                                           // https://www.npmjs.com/package/routes
   '/someRedirect': '/about', // redirects can be created
-  '404': { name: '404' } // 404 can be defined which will always evaluate if the route is not matched
+  '404': { name: '404' } // 404 can be defined which will always evaluate if the route is not matched,
+  postHash: '!' // Defines what prefixes the routes
+  pushState: true, // Whether to use the history api or not
 });
 
 router.init(); // calling init will start resolving routes
 
 router.go( '/gallery/10' ); // calling go will cause the router to evaluate 
+
+router.go( '/gallery/10', {silent: true} ); // will not trigger a section change, useful for scrolling sites
 
 router.destroy(); // will destroy the router
 ```
