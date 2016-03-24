@@ -194,7 +194,7 @@ p.onURL = function(url) {
 	var routeData;
 	var section;
 
-	if( global.location && url ) {
+	if( global.location && url!==undefined && url!==null ) {
 
 		if (url.charAt(0) != '/') url = '/' + url;
 		// if we've already looked at this url then just get out of this function
@@ -203,7 +203,7 @@ p.onURL = function(url) {
 		}
 
 		this.resolved = url;
-		routeStr = this.hasPushState ? url : url.substr(1 + this.s.postHash.length);
+		routeStr = (this.hasPushState || url.length<2) ? url : url.substr(1 + this.s.postHash.length);
 	}
 
 	routeData = this.getRouteData(routeStr) || this.getRouteData('404');
