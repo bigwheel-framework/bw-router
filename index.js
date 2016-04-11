@@ -61,7 +61,7 @@ p.init = function() {
 	this.onURL = this.onURL.bind(this);
 
 	if( global.location ) {
-		loc.start({pushState: this.s.pushState!==undefined ? this.s.pushState : true});
+		loc.start({pushState: this.s.pushState!==undefined ? this.s.pushState : true, root: this.s.root || '/'});
 		this.hasPushState = loc.hasPushState();
 		loc.onChange(this.onURL);
 		loc.loadUrl();
