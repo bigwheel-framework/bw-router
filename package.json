@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/MikkoH/bw-router",
   "dependencies": {
-    "location-bar": "^2.1.0",
+    "location-bar": "^3.0.0",
     "routes": "^1.2.0"
   },
   "devDependencies": {
